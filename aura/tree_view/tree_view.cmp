@@ -1,0 +1,32 @@
+<aura:component controller="File_Explorer">
+    
+    <aura:handler event="c:expand_node" action="{!c.handleNodeSelected}"/>
+    
+    <aura:attribute name="items" type="Object"/>
+    <aura:attribute name="level" type="Integer" default="1"/>
+    <aura:attribute name="parentId" type="String" default=""/>
+    <aura:attribute name="selectedId" type="String" default="0" />
+    <aura:attribute name="visibility" type="Object" access="PRIVATE"/>
+    
+    
+    <ul class="{!v.level==1 ? 'slds-tree' : ''}" role="{!v.level==1 ? 'tree' : 'group'}">
+        <aura:iteration items = "{!v.items}" var="item">
+            <li aria-expanded="{!item.Expanded}" aria-selected="{!v.selectedId == item.RootContentFolderId ? 'true' : 'false'}" aria-level="{!v.level}" role="treeitem"> <!--aria-expanded="true"-->
+                <div class="slds-tree__item">
+                    <lightning:buttonIcon aura:id="{!('bn-' + item.RootContentFolderId)}" class="{!('slds-m-right_x-small ' + (item.Description == 'children' ? '' : 'slds-is-disabled'))}" iconName="utility:chevronright"  size="small" variant="bare" alternativeText="Expand" onclick="{!c.handleExpandNode}" value="{!item.RootContentFolderId}"/>
+                    
+                    <span class="slds-grid" onclick="{!c.handleSelectNode}" data-path="{!v.parentId + item.RootContentFolderId}" data-node="{!item.RootContentFolderId}">
+                        <lightning:icon size="x-small" iconName="utility:open_folder" class="slds-m-right_x-small"/>
+                        <span class="slds-has-flexi-truncate">
+                            <span class="slds-tree__item-label slds-truncate" title="{!item.Name}">{!item.Name}</span>
+                        </span>
+                    </span>
+                </div>
+                <aura:if isTrue="{!not(empty(item.Items))}">
+                    <c:tree_view items="{!item.Items}" level="{!v.level+1}" parentId="{!v.parentId + item.RootContentFolderId + ':'}" selectedId="{!v.selectedId}"/>
+                </aura:if>
+            </li>
+        </aura:iteration>
+    </ul>
+    
+</aura:component>

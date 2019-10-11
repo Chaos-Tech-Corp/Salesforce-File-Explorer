@@ -1,0 +1,102 @@
+<aura:component implements="force:appHostable,flexipage:availableForAllPageTypes" access="GLOBAL" controller="File_Explorer">
+    
+    <aura:handler name="init" value="{!this}" action="{!c.init}" />
+
+    <aura:attribute name="items" type="Object" access="PRIVATE"/> <!--Tree View Items -->
+    <aura:attribute name="content" type="List" access="PRIVATE"/> <!-- File View Itemds -->
+    <aura:attribute name="pathIds" type="List" access="PRIVATE"/>   
+    <aura:attribute name="pathItems" type="List" access="PRIVATE"/>   
+    <aura:attribute name="viewtype" type="String" default="details" access="PRIVATE"/>   
+    <aura:attribute name="contentLoaded" type="Boolean" default="false" access="PRIVATE" />
+    <aura:attribute name="viewIconName" type="String" default="utility:table" access="PRIVATE"/>
+    
+    <aura:handler event="c:expand_node" action="{!c.handleSelectNode}"/>
+    
+    <article class="slds-card slds-grid ctc-article">
+        
+        <div class="slds-card__body slds-card__body_inner slds-grid slds-grid_vertical slds-has-flexi-truncate">
+            
+            <div class="slds-grid slds-p-bottom_small">
+                <div class="slds-has-flexi-truncate">
+                    <h1 class="slds-page-header__title">Library Explorer</h1></div>
+                <lightning:buttonGroup>
+                    <lightning:button  label="New Folder" iconName="utility:open_folder" onclick="{!c.createFolder}"/>
+                    <lightning:button  label="Upload" iconName="utility:upload" disabled="{!empty(v.pathIds)}" onclick="{!c.handleUploadClick}"/>
+                    <!--<lightning:buttonMenu alternativeText="Sort By" iconName="utility:filter">
+                        <lightning:menuItem label="Name" value="title" />
+                        <lightning:menuItem label="Type" value="filetype" />
+                        <lightning:menuItem label="Size" value="contentsize" />
+                    </lightning:buttonMenu>-->
+                    <lightning:button label="Refresh" iconName="utility:refresh" onclick="{!c.handleRefreshClick}"/>
+                    <lightning:buttonMenu menuAlignment="auto" alternativeText="Display" iconName="{!v.viewIconName}" class="slds-button_last"  onselect="{! c.changeViewType }">
+                        <lightning:menuItem aura:id="menuItems" label="Previews" value="previews" checked="false" iconName="utility:tile_card_list"/>
+                        <!--<lightning:menuItem aura:id="menuItems" label="Large Icons" value="large_icon" checked="false" iconName="utility:apps"/>-->
+                        <lightning:menuItem aura:id="menuItems" label="Tiles" value="tiles" checked="false" iconName="utility:snippet"/>
+                        <lightning:menuItem aura:id="menuItems" label="Details" value="details" checked="true" iconName="utility:table"/>
+                    </lightning:buttonMenu>
+                </lightning:buttonGroup>
+            </div>
+            
+            <div class="slds-grid slds-border_top slds-border_right slds-border_bottom slds-border_left slds-has-flexi-truncate ctc-overflow_hidden">
+                
+                <!--Tree Navigation-->                
+                <div class="slds-col slds-size_1-of-4 ctc-overflow_auto">
+                    <div >
+                        <c:tree_view items="{!v.items}"/>
+                    </div>
+                </div>
+                
+                <div class="slds-col slds-border_left slds-has-flexi-truncate slds-grid slds-grid_vertical ctc-overflow_hidden">
+                    
+                    <!--navigation breadcrums-->
+                    <div class="slds-p-around_x-small slds-border_bottom" style="flex-shrink:0">
+                        <nav role="navigation" aria-label="Breadcrumbs">
+                            <ol class="slds-breadcrumb slds-list_horizontal slds-wrap">
+                                <li class="slds-breadcrumb__item">
+                                    <a href="javascript:void(0);"><lightning:icon size="x-small" iconName="utility:opened_folder" /></a>
+                                </li>
+                                <aura:iteration items="{! v.pathItems }" var="step" indexVar="ix">
+                                    <li class="slds-breadcrumb__item">
+                                        <a href="javascript:void(0);" data-ix="{!ix}" onclick="{!c.handleNavClick}">{!step}</a>
+                                    </li>
+                                </aura:iteration>
+                            </ol>
+                        </nav>
+                    </div>
+                    
+                    <!--folder content-->                    
+                    <div class="{!'slds-grid slds-wrap slds-has-flexi-truncate slds-is-relative ctc-overflow_auto ctc-' + v.viewtype}">
+                        
+                        <aura:if isTrue="{! not(v.contentLoaded) }">
+                            <lightning:spinner alternativeText="Loading" size="medium" />
+                        </aura:if>
+                        
+                        <aura:if isTrue="{!empty(v.content)}">
+                            <div class="slds-p-around_medium slds-has-flexi-truncate slds-text-align_center slds-text-color_weak slds-full-size">This folder is empty.</div>
+                            <aura:set attribute="else">
+                                <aura:if isTrue="{!v.viewtype == 'tiles'}">
+                                    <aura:iteration items="{! v.content }" var="item"><c:small_icon item="{!item}" /></aura:iteration>
+                                </aura:if>
+                                <!--<aura:if isTrue="{!v.viewtype == 'large_icon'}">
+                                    <aura:iteration items="{! v.content }" var="item"><c:large_icon item="{!item}" /></aura:iteration>
+                                </aura:if>-->
+                                <aura:if isTrue="{!v.viewtype == 'previews'}">
+                                    <aura:iteration items="{! v.content }" var="item"><c:list_icon item="{!item}" /></aura:iteration>
+                                </aura:if>
+                                
+                                <aura:if isTrue="{!v.viewtype == 'details'}">
+                                    <c:detail_icon content="{!v.content}" />
+                                </aura:if>
+                            </aura:set>
+                        </aura:if>
+                    </div>
+                    
+                    
+                </div>
+            </div>
+        </div>
+    </article>
+    
+    {!v.body}
+    
+</aura:component>

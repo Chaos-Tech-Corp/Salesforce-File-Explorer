@@ -1,0 +1,47 @@
+.THIS.ctc-table {}
+
+.THIS.ctc-table th {
+    text-align:left;
+    background-color:#f3f2f2;
+    padding:4px;
+}
+
+.THIS.ctc-table td {
+    padding:8px 4px;
+    border-bottom:1px solid #f3f2f2;
+}
+
+.THIS.ctc-table td.ctc-no-border {
+    border-bottom:none;
+}
+
+.THIS.ctc-table tbody tr {
+    
+}
+
+.THIS.ctc-table tbody tr:hover {
+    background-color:#f3f2f2;
+}
+
+.THIS.ctc-table tbody td:first-child {
+    padding-left:12px;
+}
+
+.THIS.ctc-table tbody td:last-child {
+    padding-right:12px;
+}
+
+.THIS .ctc-number {
+    text-align:right;
+}
+
+.THIS .ctc-date {
+    text-align:right;
+    width:155px;
+    max-width:155px;
+}
+
+.THIS .ctc-icon {
+    width:14px;
+    padding-right:0px;
+}

@@ -1,0 +1,6 @@
+<aura:event type="APPLICATION" description="Node Selected">
+    <aura:attribute name="nodeId" type="String"/>
+    <aura:attribute name="path" type="String"/>
+    <aura:attribute name="name" type="String"/>
+    <aura:attribute name="append" type="Boolean" default="false"/>
+</aura:event>

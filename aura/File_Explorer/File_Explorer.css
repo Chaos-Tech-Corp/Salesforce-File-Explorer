@@ -1,0 +1,67 @@
+.THIS.ctc-article {
+    height:100%;
+    min-height:400px;
+}
+
+.THIS .ctc-large_icon {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: flex-start;
+    align-content: flex-start;
+}
+
+.THIS .ctc-tiles {
+    flex-direction: column;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: flex-start;
+    align-content: flex-start;    
+}
+
+.THIS .ctc-previews {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: flex-start;
+    align-content: flex-start;    
+    padding:8px;
+}
+
+.THIS .ctc-previews .forceContentFileCard {
+    margin:6px;
+}
+
+.THIS .ctc-details {
+
+}
+
+.THIS .slds-builder-header_container {
+    position: relative !important;
+}
+
+.THIS .ctc-p_none {
+    padding:0;
+}
+
+.THIS .ctc-overflow_hidden {
+    overflow:hidden;
+}
+
+.THIS .ctc-overflow_auto {
+    overflow:auto;
+}
+
+.THIS .ctc-overflow_y {
+    overflow:hidden;
+    overflow-y:auto;
+}
+
+.THIS .slds-breadcrumb__item a {
+    color:#080707;
+    text-decoration:none;
+}
+
+.THIS .slds-page-header__title {
+    line-height:32px;
+}
