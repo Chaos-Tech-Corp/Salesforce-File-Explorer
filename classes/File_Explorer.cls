@@ -103,49 +103,68 @@ public with sharing class File_Explorer {
     }
     
     @AuraEnabled
-    public static void createNode(string folderId, string folderName) {
+    public static string createNode(string folderId, string folderName) {
         if (folderId == null) {
-            ContentWorkspace newFolder = new ContentWorkspace();
-            newFolder.Name = folderName.replaceAll('[^a-zA-Z0-9 ]', '').replaceAll('[ ]','_');
-            insert newFolder;
+            if (Schema.sObjectType.ContentWorkspace.IsCreateable()) {
+                ContentWorkspace newFolder = new ContentWorkspace();
+                newFolder.Name = folderName.replaceAll('[^a-zA-Z0-9 ]', '').replaceAll('[ ]','_');
+                insert newFolder; return newFolder.Id;
+            }
         } else {
-            ContentFolder newFolder = new ContentFolder();
-            newFolder.Name = folderName;
-            newFolder.ParentContentFolderId = folderId;
-            insert newFolder;
+            if (Schema.sObjectType.ContentFolder.IsCreateable()) {
+                ContentFolder newFolder = new ContentFolder();
+                newFolder.Name = folderName;
+                newFolder.ParentContentFolderId = folderId;
+                insert newFolder; return newFolder.Id;
+            }
         }
+        return null;
     }
     
     @AuraEnabled
-    public static void renameNode(string folderId, string folderName) {
-        ContentFolder folder = new ContentFolder();
-        folder.Name = folderName;
-        folder.Id = folderId;
-        update folder;
+    public static boolean renameNode(string folderId, string folderName) {
+        if (Schema.sObjectType.ContentFolder.isUpdateable() && Schema.sObjectType.ContentFolder.fields.Name.isUpdateable()) {
+            ContentFolder[] folders = [SELECT Id, UserRecordAccess.HasEditAccess FROM ContentFolder WHERE Id = :folderId];
+            if (folders.size() > 0 && folders[0].UserRecordAccess.HasEditAccess) {
+                folders[0].Name = folderName;
+                update folders[0];
+                return true;
+            }
+        }
+        return false;
     }
     
     @AuraEnabled
-    public static void deleteNode(string folderId) {
-        ContentFolder folder = new ContentFolder(); folder.Id = folderId; delete folder;
+    public static boolean deleteNode(string folderId) {
+        if (Schema.sObjectType.ContentFolder.isDeletable()) {
+            ContentFolder[] folders = [SELECT Id, UserRecordAccess.HasDeleteAccess FROM ContentFolder WHERE Id = :folderId];
+            if (folders.size() > 0 && folders[0].UserRecordAccess.HasDeleteAccess) {
+                delete folders[0];
+                return true;
+            }
+        }
+        return false;
     }
     
     @AuraEnabled
     public static void deleteFile(string fileId) {
-        ContentDocument file = new ContentDocument(); file.Id = fileId; delete file;
+        if (Schema.sObjectType.ContentDocument.isDeletable()) {
+            ContentDocument file = new ContentDocument(); file.Id = fileId; delete file;
+        }
     }
     
     @AuraEnabled
     public static void addFilesToNode(string folderId, string[] fileIds) {
         
         for(string id : fileIds) {
-          ContentFolderMember cfm = [SELECT Id, ChildRecordId, ParentContentFolderId FROM ContentFolderMember WHERE ChildRecordId = :id LIMIT 1]; cfm.ParentContentFolderId = folderId; update cfm;
+            ContentFolderMember cfm = [SELECT Id, ChildRecordId, ParentContentFolderId FROM ContentFolderMember WHERE ChildRecordId = :id LIMIT 1]; cfm.ParentContentFolderId = folderId; update cfm;
         }
         
     }
     
     @AuraEnabled
     public static string findLibraryId(string folderId) {
-      ContentFolder folder = [select Id, Name from ContentFolder Where Id = :folderId  LIMIT 1];
+        ContentFolder folder = [select Id, Name from ContentFolder Where Id = :folderId  LIMIT 1];
         return folder.Name;
     }
     
