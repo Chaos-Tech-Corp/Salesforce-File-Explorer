@@ -10,7 +10,7 @@ public with sharing class File_Explorer {
             ids.add(space.RootContentFolderId );
         }
         
-        List<AggregateResult> children = [SELECT ParentContentFolderId FROM ContentFolderItem WHERE ParentContentFolderId IN :ids GROUP BY ParentContentFolderId];
+        List<AggregateResult> children = [SELECT ParentContentFolderId FROM ContentFolderItem WHERE IsFolder = true AND ParentContentFolderId IN :ids GROUP BY ParentContentFolderId];
         ids = new Set<Id>();
         for(AggregateResult aggr:children){             
             ids.add((Id)aggr.get('ParentContentFolderId'));
