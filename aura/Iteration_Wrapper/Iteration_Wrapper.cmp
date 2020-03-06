@@ -1,0 +1,10 @@
+<aura:component >
+	
+    <aura:attribute type="List" name="items" default="[]" />
+    <aura:attribute type="Integer" name="index" default="0" />
+    
+    <aura:handler name="init" value="{!this}" action="{!c.initialize}" />
+    
+    {!v.body}
+    
+</aura:component>

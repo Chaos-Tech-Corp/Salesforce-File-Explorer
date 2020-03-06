@@ -1,0 +1,38 @@
+<aura:component controller="File_Explorer">
+    
+    <aura:attribute type="String" name="folderId" default="" />
+    <aura:attribute type="Integer" name="level" default="1" />
+    <aura:attribute type="List" name="items" default="[]" />
+    <aura:attribute type="Boolean" name="loading" default="true" />
+    <aura:attribute type="List" name="treeItems" default="[]" />
+    
+    <aura:handler name="init" value="{!this}" action="{!c.initialize}" />
+    
+    <aura:registerEvent name="pathChangeEvent" type="c:File_Path_Change"/>
+    <aura:registerEvent name="nodeExpandEvent" type="c:File_Node_Expanded"/>
+    
+    <aura:if isTrue="{!v.loading}">
+        <lightning:spinner alternativeText="Loading" size="medium" />
+    </aura:if>
+    
+    <ul class="{!v.level==1 ? 'slds-tree' : ''}" role="{!v.level == 1 ? 'tree' : 'group'}">
+        <aura:iteration items = "{!v.items}" var="item" indexVar="i">
+            <li aria-expanded="false" aria-selected="{!item.Selected ? 'true' : 'false'}" aria-label="{!item.Title}" aria-level="{!v.level}" role="treeitem" data-id="{!item.Id}">
+                <div class="slds-tree__item">
+                    <lightning:buttonIcon class="{! 'slds-m-right_x-small' + (item.HasChildren ? '' : ' slds-is-disabled')}" iconName="utility:chevronright"  size="small" variant="bare" alternativeText="Expand" onclick="{!c.handleExpandNode}" value="{!item.Id + ':' + i}"/>
+                    
+                    <span class="slds-grid" onclick="{!c.handleSelectNode}">
+                        <lightning:icon size="x-small" iconName="utility:open_folder" class="slds-m-right_x-small"/>
+                        <span class="slds-has-flexi-truncate">
+                            <span class="slds-tree__item-label slds-truncate" title="{!item.Title}">{!item.Title}</span>
+                        </span>
+                    </span>
+                </div>
+                <aura:if isTrue="{!not(empty(v.treeItems))}">
+                    <c:Iteration_Wrapper items="{!v.treeItems}" index="{!i}" />
+                </aura:if>
+            </li>
+        </aura:iteration>
+    </ul>
+    
+</aura:component>

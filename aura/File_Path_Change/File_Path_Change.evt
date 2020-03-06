@@ -1,0 +1,6 @@
+<aura:event type="COMPONENT" description="File Explorer Path Changed">
+    <aura:attribute name="path" type="List"/>
+    <aura:attribute name="append" type="Boolean" default="false" />
+    <aura:attribute name="id" type="String"/>
+    <aura:attribute name="title" type="String"/>
+</aura:event>
