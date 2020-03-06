@@ -1,121 +1,182 @@
 public with sharing class File_Explorer {
     
     @AuraEnabled
-    public static List<ContentWorkspace> loadRoot() {
+    public static PermissionSettings getPermissions() {
         
-        List<ContentWorkspace> spaces = [SELECT Id, Name, RootContentFolderId FROM ContentWorkspace WHERE RootContentFolderId != null];
+        PermissionSettings settings = new PermissionSettings();
         
-        Set<Id> ids = new Set<Id>();
-        for(ContentWorkspace space : spaces) {
-            ids.add(space.RootContentFolderId );
-        }
+        settings.CanCreateWorkspace = Schema.sObjectType.ContentWorkspace.isCreateable();
+        settings.CanAccessWorkspace = Schema.sObjectType.ContentWorkspace.isAccessible();
         
-        List<AggregateResult> children = [SELECT ParentContentFolderId FROM ContentFolderItem WHERE IsFolder = true AND ParentContentFolderId IN :ids GROUP BY ParentContentFolderId];
-        ids = new Set<Id>();
-        for(AggregateResult aggr:children){             
-            ids.add((Id)aggr.get('ParentContentFolderId'));
-        } 
         
-        for(ContentWorkspace space : spaces) {
-            for (Id i:  ids) {
-                if (space.RootContentFolderId  == i) {
-                    space.Description = 'children';
-                }
-            }
-        }
-        
-        return spaces;
+        return settings;
     }
     
     @AuraEnabled
-    public static List<FolderItem> loadNode(string id) {
-        
-        List<FolderItem> items = new List<FolderItem>();
-        
-        if (id.indexOf(':')>0) {
-            id = id.substring(id.lastIndexOf(':')+1);
+    public static FolderPermissions getFolderPermissions(string FolderId) {
+        Id userId = UserInfo.getUserId();
+
+
+        //Declaring a Set as we don't want Duplicate Group Ids
+        Set<Id> results = new Set<Id>();
+        ///Declaring a Map for Group with Role
+        Map<Id,Id> grRoleMap = new Map<Id,Id>();
+        //Populating the Map with RelatedID(i.e.UserRoledId) as Key
+        for(Group gr : [select id, relatedid, name from Group]) {
+            grRoleMap.put(gr.relatedId,gr.id);
+        }
+        //Groups directly associated to user
+        //Set<Id> groupwithUser = new Set<Id>();
+        //Populating the Group with User with GroupId we are filtering only for Group of Type Regular,Role and RoleAndSubordinates
+        for(GroupMember u : [select groupId from GroupMember where UserOrGroupId=:userId and (Group.Type = 'Regular' OR Group.Type='Role' OR Group.Type='RoleAndSubordinates')]) {
+            //groupwithUser.add(u.groupId);
+            results.add(u.groupId);
+        }
+        //Groups with Role
+        for(User u : [select UserRoleId from User where id=:userId]) {
+            //Checking if the current User Role is part of Map or not
+            if(grRoleMap.containsKey(u.UserRoleId)) {
+                results.add(grRoleMap.get(u.UserRoleId));
+            }
+        } 
+        //Combining both the Set
+        //results.addAll(groupwithUser);
+        //Traversing the whole list of Groups to check any other nested Group
+        Map<Id,Id> grMap = new Map<Id,Id>();
+        for(GroupMember gr : [select id,UserOrGroupId,Groupid from GroupMember where (Group.Type = 'Regular' OR Group.Type='Role' OR Group.Type='RoleAndSubordinates')]) {
+            grMap.put(gr.UserOrGroupId,gr.Groupid);
+        } 
+        for(Id i :results) {
+            if(grMap.containsKey(i)) {
+                results.add(grMap.get(i));
+            }
         }
         
-        List<ContentFolderItem> spaces = [SELECT Id, Title, IsFolder FROM ContentFolderItem WHERE ParentContentFolderId = :id ORDER BY IsFolder DESC, Title ASC];
+        //Add the user to the result
+        results.Add(userId);
+        //Find the WorkspaceId from the ContentFolderId
+        ContentFolderItem folderItem = [SELECT Id, Title FROM ContentFolderItem WHERE Id = :FolderId LIMIT 1];
         
-        Set<Id> ids = new Set<Id>();
-        for(ContentFolderItem space: spaces) {
-            if (space.IsFolder){
-                FolderItem item = new FolderItem();
-                item.Id = space.Id;
-                item.Title = space.Title;
-                item.IsFolder = space.IsFolder;
-                items.add(item);
+        List<ContentWorkspaceMember> members = [SELECT ContentWorkspaceId, ContentWorkspacePermissionId, ContentWorkspacePermission.Name, ContentWorkspacePermission.Type, ContentWorkspacePermission.PermissionsManageWorkspace, ContentWorkspacePermission.PermissionsOrganizeFileAndFolder, ContentWorkspacePermission.PermissionsAddContent, ContentWorkspacePermission.PermissionsDeleteContent, MemberId, MemberType
+                                                FROM ContentWorkspaceMember
+                                                WHERE MemberId in :results AND ContentWorkspaceId = :folderItem.Title];
+        
+        FolderPermissions settings = new FolderPermissions();
+        for(ContentWorkspaceMember m : members) {
+            system.debug(m.ContentWorkspacePermission);
+            settings.CanCreateFolder =  settings.CanCreateFolder || m.ContentWorkspacePermission.PermissionsOrganizeFileAndFolder || m.ContentWorkspacePermission.Type == 'Admin';
+            settings.CanAddFiles =  settings.CanAddFiles || m.ContentWorkspacePermission.PermissionsAddContent || m.ContentWorkspacePermission.Type == 'Admin' || m.ContentWorkspacePermission.Type == 'Author';
+            settings.CanDelete =  settings.CanDelete || m.ContentWorkspacePermission.PermissionsDeleteContent || m.ContentWorkspacePermission.Type == 'Admin';
+            settings.CanManageMember =  settings.CanManageMember || m.ContentWorkspacePermission.PermissionsManageWorkspace || m.ContentWorkspacePermission.Type == 'Admin';
+        }
+        
+        return settings;
+    }
+    
+    @AuraEnabled
+    public static List<FolderItem> loadNode(string folderId, boolean foldersOnly) {
+        
+        List<FolderItem> nodeItems = new List<FolderItem>();
+        
+        //get all the items inside a folder
+        //if id is null, it's the root folder
+        List<ContentFolderItem> folderItems; 
+        //should I generate a dynamic query? what would be the performance advantage of each case?
+        if (foldersOnly) {
+            folderItems = [SELECT Id, ContentSize, Title, IsFolder, ParentContentFolderId, FileType, FileExtension 
+                           FROM ContentFolderItem 
+                           WHERE IsFolder = true AND ParentContentFolderId = :folderId];
+        } else {
+            folderItems = [SELECT Id, ContentSize, Title, IsFolder, ParentContentFolderId, FileType, FileExtension 
+                           FROM ContentFolderItem 
+                           WHERE ParentContentFolderId = :folderId];
+        }
+        //need to process files and folder separately when id == null
+        //the folder title is the ContentFolderId of the folder
+        Set<Id> folderIds = new Set<Id>();
+        for(ContentFolderItem item : folderItems) {
+            if (item.IsFolder) {
+                folderIds.add(item.Id);
+            }
+            if (folderId != '') {
+                nodeItems.add(new FolderItem(
+                    item.Id, 
+                    item.Title,
+                    item.IsFolder,
+                    item.FileType,
+                    item.FileExtension,
+                    null, // - TODO - Get las Modified Date
+                    item.ContentSize,
+                    false
+                ));
+            }
+        }
+        //if any root folder, load it
+        if (folderIds.size() > 0) {
+            
+            List<AggregateResult> children = [SELECT ParentContentFolderId FROM ContentFolderItem WHERE IsFolder = true AND ParentContentFolderId IN :folderIds GROUP BY ParentContentFolderId];
+            
+            if (folderId == null || folderId == '') {
+                for(ContentWorkspace space : 
+                    [SELECT Id, Description, DeveloperName, IsRestrictContentTypes, IsRestrictLinkedContentTypes, Name, RootContentFolderId, TagModel, WorkspaceImageId, WorkspaceType 
+                     FROM ContentWorkspace 
+                     WHERE RootContentFolderId IN :folderIds]) {
+                         Boolean HasChildren = false;
+                         for(AggregateResult aggr:children){             
+                             if (space.RootContentFolderId == (Id)aggr.get('ParentContentFolderId')) {
+                                 HasChildren = true;
+                                 break;
+                             }
+                         } 
+                         
+                         nodeItems.add(new FolderItem(
+                             space.RootContentFolderId, 
+                             space.Name,
+                             true,
+                             null,
+                             null,
+                             null, // - TODO - Get las Modified Date
+                             null, // - TODO - Calculate the entire folder size?
+                             HasChildren
+                         ));
+                     }
             } else {
-                ids.Add(space.Id);
-            }
-        }
-        List<ContentDocument> docs = [SELECT Id, FileType, Title, FileExtension, ContentSize, ContentModifiedDate, LatestPublishedVersion.ContentUrl FROM Contentdocument WHERE Id IN :ids ORDER BY Title ASC];
-        for(ContentDocument doc: docs) {
-            FolderItem item = new FolderItem();
-            item.Id = doc.Id;
-            item.IsFolder = false;
-            item.FileType = doc.Filetype;
-            item.Title = doc.Title;
-            item.FileExtension = doc.FileExtension;
-            item.ContentSize = doc.ContentSize;
-            item.ContentModifiedDate = doc.ContentModifiedDate;
-            items.add(item);
-        }
-        
-        return items;
-    }
-    
-    @AuraEnabled
-    public static List<FolderDescription> expandNode(string id) {
-        
-        if (id.indexOf(':')>0) {
-            id = id.substring(id.lastIndexOf(':')+1);
-        }
-        
-        List<ContentFolderItem> spaces = [SELECT Id, Title FROM ContentFolderItem WHERE ParentContentFolderId = :id AND IsFolder = true ORDER BY Title ASC];
-        
-        Set<Id> ids = new Set<Id>();
-        for(ContentFolderItem space : spaces) {
-            ids.add(space.Id );
-        }
-        
-        List<AggregateResult> children = [SELECT ParentContentFolderId FROM ContentFolderItem WHERE ParentContentFolderId IN :ids AND IsFolder = true GROUP BY ParentContentFolderId];
-        ids = new Set<Id>();
-        for(AggregateResult aggr:children){             
-            ids.add((Id)aggr.get('ParentContentFolderId'));
-        } 
-        
-        List<FolderDescription> result = new List<FolderDescription>();
-        for(ContentFolderItem space : spaces) {
-            FolderDescription descr = new FolderDescription();
-            descr.Name = space.Title;
-            descr.RootContentFolderId = space.Id;
-            for (Id i:  ids) {
-                if (space.Id  == i) {
-                    descr.Description = 'children';
+                for(FolderItem nodeItem : nodeItems) {
+                    
+                    Boolean HasChildren = false;
+                    for(AggregateResult aggr:children){             
+                        if (nodeItem.Id == (Id)aggr.get('ParentContentFolderId')) {
+                            HasChildren = true;
+                            break;
+                        }
+                    } 
+                    nodeItem.HasChildren = HasChildren;
                 }
             }
-            result.add(descr);
         }
         
-        return result;
+        
+        return nodeItems;
     }
     
     @AuraEnabled
     public static string createNode(string folderId, string folderName) {
         if (folderId == null) {
+            //check user permissions to create new library/workspace
             if (Schema.sObjectType.ContentWorkspace.IsCreateable()) {
                 ContentWorkspace newFolder = new ContentWorkspace();
                 newFolder.Name = folderName.replaceAll('[^a-zA-Z0-9 ]', '').replaceAll('[ ]','_');
                 insert newFolder; return newFolder.Id;
             }
         } else {
-            if (Schema.sObjectType.ContentFolder.IsCreateable()) {
-                ContentFolder newFolder = new ContentFolder();
-                newFolder.Name = folderName;
-                newFolder.ParentContentFolderId = folderId;
-                insert newFolder; return newFolder.Id;
+            ContentFolder[] folders = [SELECT Id, UserRecordAccess.HasEditAccess FROM ContentFolder WHERE Id = :folderId];
+            if (folders.size() > 0 && folders[0].UserRecordAccess.HasEditAccess) {
+                if (Schema.sObjectType.ContentFolder.IsCreateable()) {
+                    ContentFolder newFolder = new ContentFolder();
+                    newFolder.Name = folderName;
+                    newFolder.ParentContentFolderId = folderId;
+                    insert newFolder; return newFolder.Id;
+                }
             }
         }
         return null;
@@ -146,46 +207,27 @@ public with sharing class File_Explorer {
         return false;
     }
     
-    @AuraEnabled
-    public static void deleteFile(string fileId) {
-        if (Schema.sObjectType.ContentDocument.isDeletable()) {
-            ContentDocument file = new ContentDocument(); file.Id = fileId; delete file;
-        }
-    }
-    
-    @AuraEnabled
-    public static void addFilesToNode(string folderId, string[] fileIds) {
-        
-        for(string id : fileIds) {
-            ContentFolderMember cfm = [SELECT Id, ChildRecordId, ParentContentFolderId FROM ContentFolderMember WHERE ChildRecordId = :id LIMIT 1]; cfm.ParentContentFolderId = folderId; update cfm;
-        }
-        
-    }
-    
-    @AuraEnabled
-    public static string findLibraryId(string folderId) {
-        ContentFolder folder = [select Id, Name from ContentFolder Where Id = :folderId  LIMIT 1];
-        return folder.Name;
-    }
-    
-    
-    
-    public class FolderDescription {
-        @AuraEnabled
-        public Id RootContentFolderId;
-        @AuraEnabled
-        public String Name;
-        @AuraEnabled
-        public String Description;
-    }
-    
     public class FolderItem {
+        
+        public FolderItem(Id Id, String Title, Boolean IsFolder, String FileType, String FileExtension, DateTime ContentModifiedDate, Decimal ContentSize, Boolean HasChildren) {
+            this.Id = Id;
+            this.Title = Title;
+            this.IsFolder = IsFolder;
+            this.FileType = FileType;
+            this.FileExtension = FileExtension;
+            this.ContentModifiedDate = ContentModifiedDate;
+            this.ContentSize = ContentSize;
+            this.HasChildren = HasChildren;
+        }
+        
         @AuraEnabled
         public Id Id;
         @AuraEnabled
         public String Title;
         @AuraEnabled
         public Boolean IsFolder;
+        @AuraEnabled
+        public Boolean HasChildren;
         @AuraEnabled
         public String FileType;
         @AuraEnabled
@@ -194,5 +236,23 @@ public with sharing class File_Explorer {
         public DateTime ContentModifiedDate;
         @AuraEnabled
         public Decimal ContentSize;
+    }
+    
+    public class PermissionSettings {
+        @AuraEnabled
+        public Boolean CanCreateWorkspace;
+        @AuraEnabled
+        public Boolean CanAccessWorkspace;
+    }
+    
+    public class FolderPermissions {
+        @AuraEnabled
+        public Boolean CanCreateFolder = false;
+        @AuraEnabled
+        public Boolean CanAddFiles = false;
+        @AuraEnabled
+        public Boolean CanManageMember = false;
+        @AuraEnabled
+        public Boolean CanDelete = false;
     }
 }
