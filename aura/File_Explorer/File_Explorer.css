@@ -1,67 +1,37 @@
-.THIS.ctc-article {
+.THIS.forceContentFilesHomeDesktop {
+    display : flex;
+    flex-flow: column nowrap;
     height:100%;
-    min-height:400px;
 }
-
-.THIS .ctc-large_icon {
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    align-items: flex-start;
-    align-content: flex-start;
+        
+.THIS.forceContentFilesHomeDesktop .centerRegion {
+    flex-grow: 1;
+    display: flex;
+    background-color: var(--lwc-colorBackgroundAlt2,rgb(243, 242, 242));
 }
-
-.THIS .ctc-tiles {
-    flex-direction: column;
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    align-items: flex-start;
-    align-content: flex-start;    
+        
+.THIS.forceContentFilesHomeDesktop .leftNav {
+    background-color: var(--lwc-colorForegroundPrimary,rgb(255, 255, 255));
+    flex: 0 0 auto;
+    min-width: 200px;
+	width:25%;
+    position: relative;
 }
-
-.THIS .ctc-previews {
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    align-items: flex-start;
-    align-content: flex-start;    
-    padding:8px;
+                
+.THIS.forceContentFilesHomeDesktop .fileList {
+ 	background-color: var(--lwc-colorForegroundPrimary,rgb(255, 255, 255));                   
+    border-left: 1px solid var(--lwc-colorBorder,rgb(221, 219, 218));
+	width:75%;
+    max-width: calc(100% - 200px);
+    flex: 1;
+    position: relative;
 }
-
-.THIS .ctc-previews .forceContentFileCard {
-    margin:6px;
-}
-
-.THIS .ctc-details {
-
-}
-
-.THIS .slds-builder-header_container {
-    position: relative !important;
-}
-
-.THIS .ctc-p_none {
-    padding:0;
-}
-
-.THIS .ctc-overflow_hidden {
-    overflow:hidden;
-}
-
-.THIS .ctc-overflow_auto {
-    overflow:auto;
-}
-
-.THIS .ctc-overflow_y {
-    overflow:hidden;
-    overflow-y:auto;
-}
-
-.THIS .slds-breadcrumb__item a {
-    color:#080707;
-    text-decoration:none;
-}
-
-.THIS .slds-page-header__title {
-    line-height:32px;
+                            
+.THIS.forceContentFilesHomeDesktop .slds-illustration {
+	width:100%;
+	height:100%;
+	display:flex;
+	justify-content: center;
+	align-items: center;
+	flex-direction: column;
 }
