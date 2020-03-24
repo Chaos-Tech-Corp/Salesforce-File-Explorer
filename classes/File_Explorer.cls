@@ -69,8 +69,14 @@ public with sharing class File_Explorer {
             settings.CanDelete =  settings.CanDelete || m.ContentWorkspacePermission.PermissionsDeleteContent || m.ContentWorkspacePermission.Type == 'Admin';
             settings.CanManageMember =  settings.CanManageMember || m.ContentWorkspacePermission.PermissionsManageWorkspace || m.ContentWorkspacePermission.Type == 'Admin';
         }
-        
+        settings.ContentWorkspaceId = folderItem.Title;
+            
         return settings;
+    }
+    
+    @AuraEnabled
+    public static List<ContentFolder> getNodes() {
+		return [SELECT Id, Name, ParentContentFolderId FROM ContentFolder WHERE ParentContentFolderId != null];
     }
     
     @AuraEnabled
@@ -160,12 +166,12 @@ public with sharing class File_Explorer {
     }
     
     @AuraEnabled
-    public static string createNode(string folderId, string folderName) {
-        if (folderId == null) {
+    public static string createFolder(string folderId, string folderType, string folderName) {
+        if (folderId == null || folderId == '' || folderType == 'Library') {
             //check user permissions to create new library/workspace
             if (Schema.sObjectType.ContentWorkspace.IsCreateable()) {
                 ContentWorkspace newFolder = new ContentWorkspace();
-                newFolder.Name = folderName.replaceAll('[^a-zA-Z0-9 ]', '').replaceAll('[ ]','_');
+                newFolder.Name = folderName.replaceAll('[^a-zA-Z0-9 ]', '_'); //NO need to replace white spaces //.replaceAll('[ ]','_');
                 insert newFolder; return newFolder.Id;
             }
         } else {
@@ -173,7 +179,7 @@ public with sharing class File_Explorer {
             if (folders.size() > 0 && folders[0].UserRecordAccess.HasEditAccess) {
                 if (Schema.sObjectType.ContentFolder.IsCreateable()) {
                     ContentFolder newFolder = new ContentFolder();
-                    newFolder.Name = folderName;
+                    newFolder.Name = folderName.replaceAll('[^a-zA-Z0-9 ]', '_');
                     newFolder.ParentContentFolderId = folderId;
                     insert newFolder; return newFolder.Id;
                 }
@@ -205,6 +211,16 @@ public with sharing class File_Explorer {
             }
         }
         return false;
+    }
+    
+    @AuraEnabled
+    public static void addFilesToNode(string folderId, string[] fileIds) {
+        for(string id : fileIds) {
+            ContentFolderMember cfm = [SELECT Id, ChildRecordId, ParentContentFolderId FROM ContentFolderMember WHERE ChildRecordId = :id LIMIT 1];
+            cfm.ParentContentFolderId = folderId;
+            update cfm;
+        }
+        
     }
     
     public class FolderItem {
@@ -246,6 +262,8 @@ public with sharing class File_Explorer {
     }
     
     public class FolderPermissions {
+        @AuraEnabled
+        public String ContentWorkspaceId;
         @AuraEnabled
         public Boolean CanCreateFolder = false;
         @AuraEnabled
