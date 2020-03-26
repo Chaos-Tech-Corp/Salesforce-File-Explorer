@@ -78,89 +78,86 @@ public with sharing class File_Explorer {
     public static List<ContentFolder> getNodes() {
 		return [SELECT Id, Name, ParentContentFolderId FROM ContentFolder WHERE ParentContentFolderId != null];
     }
+
+    @AuraEnabled
+    public static List<ContentFolder> getAllNodes() {
+        List<ContentFolder> nodes = [SELECT Id, Name, ParentContentFolderId FROM ContentFolder ORDER BY Name];
+        List<ContentWorkspace> spaces = [SELECT Id, Name FROM ContentWorkspace];
+        Integer i = 0;
+        while( i < nodes.size() ){
+            if (nodes[i].ParentContentFolderId == null) {
+                Boolean found = false;
+                for(ContentWorkspace space : spaces) {
+                    if (space.Id == nodes[i].Name)  {
+                        nodes[i].Name = space.Name;
+                        found = true;
+                        break;
+                    }
+                }
+                if (found) {
+                	i++;
+                } else {
+                    nodes.remove(i);
+                }
+            } else {
+            	i++;
+            }
+        }
+        /*for(ContentFolder node : nodes) {
+            if (node.ParentContentFolderId == null) {
+                for(ContentWorkspace space : spaces) {
+                    if (space.Id == node.Name)  {
+                        node.Name = space.Name;
+                        break;
+                    }
+                }
+            }
+        }*/
+        return nodes;
+    }
     
     @AuraEnabled
-    public static List<FolderItem> loadNode(string folderId, boolean foldersOnly) {
+    public static List<FolderItem> loadNode(string folderId) {
         
         List<FolderItem> nodeItems = new List<FolderItem>();
         
         //get all the items inside a folder
         //if id is null, it's the root folder
-        List<ContentFolderItem> folderItems; 
-        //should I generate a dynamic query? what would be the performance advantage of each case?
-        if (foldersOnly) {
-            folderItems = [SELECT Id, ContentSize, Title, IsFolder, ParentContentFolderId, FileType, FileExtension 
-                           FROM ContentFolderItem 
-                           WHERE IsFolder = true AND ParentContentFolderId = :folderId];
-        } else {
-            folderItems = [SELECT Id, ContentSize, Title, IsFolder, ParentContentFolderId, FileType, FileExtension 
-                           FROM ContentFolderItem 
-                           WHERE ParentContentFolderId = :folderId];
-        }
-        //need to process files and folder separately when id == null
-        //the folder title is the ContentFolderId of the folder
-        Set<Id> folderIds = new Set<Id>();
+        List<ContentFolderItem> folderItems = [SELECT Id, ContentSize, Title, IsFolder, ParentContentFolderId, FileType, FileExtension 
+                                               FROM ContentFolderItem 
+                                               WHERE IsFolder = true AND ParentContentFolderId = :folderId ORDER BY Title];
+        
+        List<ContentFolderMember> folderMembers = [SELECT ChildRecordId, ChildRecord.Title, ChildRecord.ContentModifiedDate, ChildRecord.ContentSize, ChildRecord.FileExtension, ChildRecord.FileType //, ChildRecord.LastViewedDate --> optional for the future?
+                                                   FROM ContentFolderMember 
+                                                   WHERE ParentContentFolderId = :folderId ORDER BY ChildRecord.Title];
+        
+        //add the folders
         for(ContentFolderItem item : folderItems) {
-            if (item.IsFolder) {
-                folderIds.add(item.Id);
-            }
-            if (folderId != '') {
-                nodeItems.add(new FolderItem(
-                    item.Id, 
-                    item.Title,
-                    item.IsFolder,
-                    item.FileType,
-                    item.FileExtension,
-                    null, // - TODO - Get las Modified Date
-                    item.ContentSize,
-                    false
-                ));
-            }
-        }
-        //if any root folder, load it
-        if (folderIds.size() > 0) {
-            
-            List<AggregateResult> children = [SELECT ParentContentFolderId FROM ContentFolderItem WHERE IsFolder = true AND ParentContentFolderId IN :folderIds GROUP BY ParentContentFolderId];
-            
-            if (folderId == null || folderId == '') {
-                for(ContentWorkspace space : 
-                    [SELECT Id, Description, DeveloperName, IsRestrictContentTypes, IsRestrictLinkedContentTypes, Name, RootContentFolderId, TagModel, WorkspaceImageId, WorkspaceType 
-                     FROM ContentWorkspace 
-                     WHERE RootContentFolderId IN :folderIds]) {
-                         Boolean HasChildren = false;
-                         for(AggregateResult aggr:children){             
-                             if (space.RootContentFolderId == (Id)aggr.get('ParentContentFolderId')) {
-                                 HasChildren = true;
-                                 break;
-                             }
-                         } 
-                         
-                         nodeItems.add(new FolderItem(
-                             space.RootContentFolderId, 
-                             space.Name,
-                             true,
-                             null,
-                             null,
-                             null, // - TODO - Get las Modified Date
-                             null, // - TODO - Calculate the entire folder size?
-                             HasChildren
-                         ));
-                     }
-            } else {
-                for(FolderItem nodeItem : nodeItems) {
-                    
-                    Boolean HasChildren = false;
-                    for(AggregateResult aggr:children){             
-                        if (nodeItem.Id == (Id)aggr.get('ParentContentFolderId')) {
-                            HasChildren = true;
-                            break;
-                        }
-                    } 
-                    nodeItem.HasChildren = HasChildren;
-                }
-            }
+            nodeItems.add(new FolderItem(
+                item.Id, 
+                item.Title,
+                true,
+                null,
+                null,
+                null,
+                null,
+                false
+            ));
         }
         
+        //add the files
+        for(ContentFolderMember item : folderMembers) {
+            nodeItems.add(new FolderItem(
+                item.ChildRecordId, 
+                item.ChildRecord.Title,
+                false,
+                item.ChildRecord.FileType,
+                item.ChildRecord.FileExtension,
+                item.ChildRecord.ContentModifiedDate, // - TODO - Get las Modified Date
+                item.ChildRecord.ContentSize,
+                false
+            ));
+        }
         
         return nodeItems;
     }
