@@ -75,6 +75,14 @@ public with sharing class File_Explorer {
     }
     
     @AuraEnabled
+    public static List<ContentWorkspaceMember> getFolderMembers(string folderId) {
+        //Find the WorkspaceId from the ContentFolderId
+        //ContentFolderItem folderItem = [SELECT Id, Title FROM ContentFolderItem WHERE Id = :folderId LIMIT 1];
+        //ContentWorkspaceId = :folderItem.Title
+        return [SELECT ContentWorkspacePermission.Name, ContentWorkspacePermission.Type, MemberId, MemberType, Member.Name FROM ContentWorkspaceMember WHERE ContentWorkspaceId = :folderId];
+    }
+    
+    @AuraEnabled
     public static List<ContentFolder> getNodes() {
 		return [SELECT Id, Name, ParentContentFolderId FROM ContentFolder WHERE ParentContentFolderId != null];
     }
@@ -121,29 +129,30 @@ public with sharing class File_Explorer {
         
         List<FolderItem> nodeItems = new List<FolderItem>();
         
-        //get all the items inside a folder
         //if id is null, it's the root folder
-        List<ContentFolderItem> folderItems = [SELECT Id, ContentSize, Title, IsFolder, ParentContentFolderId, FileType, FileExtension 
-                                               FROM ContentFolderItem 
-                                               WHERE IsFolder = true AND ParentContentFolderId = :folderId ORDER BY Title];
+        if(folderId == '') {
+            List<ContentWorkspace> folderItems = [SELECT Id, Name, RootContentFolderId FROM ContentWorkspace 
+                                                  WHERE RootContentFolderId != null ORDER BY Name];
+            
+            //add the folders
+            for(ContentWorkspace item : folderItems) {
+                nodeItems.add(new FolderItem(item.RootContentFolderId, item.Name, true, null, null, null, null));
+            }
+        } else {
+            List<ContentFolderItem> folderItems = [SELECT Id, Title
+                                                   FROM ContentFolderItem 
+                                                   WHERE IsFolder = true AND ParentContentFolderId = :folderId ORDER BY Title];
+            
+            //add the folders
+            for(ContentFolderItem item : folderItems) {
+                nodeItems.add(new FolderItem(item.Id, item.Title, true, null, null, null, null));
+            }
+        }
+        
         
         List<ContentFolderMember> folderMembers = [SELECT ChildRecordId, ChildRecord.Title, ChildRecord.ContentModifiedDate, ChildRecord.ContentSize, ChildRecord.FileExtension, ChildRecord.FileType //, ChildRecord.LastViewedDate --> optional for the future?
                                                    FROM ContentFolderMember 
                                                    WHERE ParentContentFolderId = :folderId ORDER BY ChildRecord.Title];
-        
-        //add the folders
-        for(ContentFolderItem item : folderItems) {
-            nodeItems.add(new FolderItem(
-                item.Id, 
-                item.Title,
-                true,
-                null,
-                null,
-                null,
-                null,
-                false
-            ));
-        }
         
         //add the files
         for(ContentFolderMember item : folderMembers) {
@@ -154,8 +163,7 @@ public with sharing class File_Explorer {
                 item.ChildRecord.FileType,
                 item.ChildRecord.FileExtension,
                 item.ChildRecord.ContentModifiedDate, // - TODO - Get las Modified Date
-                item.ChildRecord.ContentSize,
-                false
+                item.ChildRecord.ContentSize
             ));
         }
         
@@ -222,7 +230,7 @@ public with sharing class File_Explorer {
     
     public class FolderItem {
         
-        public FolderItem(Id Id, String Title, Boolean IsFolder, String FileType, String FileExtension, DateTime ContentModifiedDate, Decimal ContentSize, Boolean HasChildren) {
+        public FolderItem(Id Id, String Title, Boolean IsFolder, String FileType, String FileExtension, DateTime ContentModifiedDate, Decimal ContentSize) {
             this.Id = Id;
             this.Title = Title;
             this.IsFolder = IsFolder;
@@ -230,7 +238,6 @@ public with sharing class File_Explorer {
             this.FileExtension = FileExtension;
             this.ContentModifiedDate = ContentModifiedDate;
             this.ContentSize = ContentSize;
-            this.HasChildren = HasChildren;
         }
         
         @AuraEnabled
