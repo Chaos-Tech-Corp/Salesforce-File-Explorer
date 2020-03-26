@@ -1,35 +1,34 @@
 <aura:component controller="File_Explorer">
     
-    <aura:attribute type="String" name="folderId" default="" />
-    <aura:attribute type="Integer" name="level" default="1" />
+    <aura:attribute type="String" name="selectedFolderId" default="" />
     <aura:attribute type="List" name="items" default="[]" />
+    <aura:attribute type="List" name="list" default="[]" />
     <aura:attribute type="Boolean" name="loading" default="true" />
-    <aura:attribute type="List" name="treeItems" default="[]" />
+    <aura:attribute type="Integer" name="level" default="1" />
     
     <aura:handler name="init" value="{!this}" action="{!c.initialize}" />
     
     <aura:registerEvent name="pathChangeEvent" type="c:File_Path_Change"/>
-    <aura:registerEvent name="nodeExpandEvent" type="c:File_Node_Expanded"/>
     
     <aura:if isTrue="{!v.loading}">
         <lightning:spinner alternativeText="Loading" size="medium" />
     </aura:if>
     
     <ul class="{!v.level==1 ? 'slds-tree' : ''}" role="{!v.level == 1 ? 'tree' : 'group'}">
-        <aura:iteration items = "{!v.items}" var="item" indexVar="i">
-            <li aria-expanded="false" aria-selected="{!item.Selected ? 'true' : 'false'}" aria-label="{!item.Title}" aria-level="{!v.level}" role="treeitem" data-id="{!item.Id}">
+        <aura:iteration items="{!v.items}" var="item" indexVar="i">
+            <li aria-expanded="{! item.expanded }" aria-selected="{!item.name == selectedFolderId ? 'true' : 'false'}" aria-label="{!item.label}" aria-level="{!v.level}" role="treeitem" data-id="{!item.name}">
                 <div class="slds-tree__item">
-                    <lightning:buttonIcon class="{! 'slds-m-right_x-small' + (item.HasChildren ? '' : ' slds-is-disabled')}" iconName="utility:chevronright"  size="small" variant="bare" alternativeText="Expand" onclick="{!c.handleExpandNode}" value="{!item.Id + ':' + i}"/>
+                    <lightning:buttonIcon class="{!' slds-m-right_x-small' + (not(empty(item.items)) ? '' : ' slds-is-disabled')}" iconName="utility:chevronright"  size="small" variant="bare" alternativeText="Expand" onclick="{!c.handleExpandNode}" value="{!item.name}"/>
                     
                     <span class="slds-grid" onclick="{!c.handleSelectNode}">
                         <lightning:icon size="x-small" iconName="utility:open_folder" class="slds-m-right_x-small"/>
                         <span class="slds-has-flexi-truncate">
-                            <span class="slds-tree__item-label slds-truncate" title="{!item.Title}">{!item.Title}</span>
+                            <span class="slds-tree__item-label slds-truncate" title="{!item.label}">{!item.label}</span>
                         </span>
                     </span>
                 </div>
-                <aura:if isTrue="{!not(empty(v.treeItems))}">
-                    <c:Iteration_Wrapper items="{!v.treeItems}" index="{!i}" />
+                <aura:if isTrue="{! not(empty(item.items)) }">
+                    <c:File_Tree_View level="{! v.level + 1}" items="{! item.items }" list="{! v.list }" selectedFolderId="{! v.selectedFolderId }"/>
                 </aura:if>
             </li>
         </aura:iteration>

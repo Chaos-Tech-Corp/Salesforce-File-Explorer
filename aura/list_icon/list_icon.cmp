@@ -1,8 +1,0 @@
-<aura:component >
-    <aura:attribute name="item" type="ContentFolderItem" />
-    
-    <aura:if isTrue="{!not(v.item.IsFolder)}">
-        <lightning:fileCard fileId="{!v.item.Id}"/>
-    </aura:if>
-    
-</aura:component>

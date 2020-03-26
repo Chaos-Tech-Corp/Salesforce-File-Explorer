@@ -32,11 +32,14 @@
             //replace the entire path
             path = event.getParam("path");
         }
+        var folderId = path[path.length - 1].id;
         component.set("v.Path", path);
-        
+        component.set("v.FolderId", folderId);
+        component.set("v.FolderName", path[path.length - 1].title);
         helper.loadPermissions(component, path);
-        helper.highlightTreeNode(component, path[path.length - 1].id);
-        helper.showNodeItems(component, path[path.length - 1].id);
+        helper.highlightTreeNode(component, folderId);
+        //component.find("treeView").FolderChange(folderId);
+        helper.showNodeItems(component, folderId);
     },
     
     handleSelectNode : function(component, event, helper) {
@@ -50,15 +53,44 @@
             }
         }
         component.set("v.Path", path);
+        component.set("v.FolderId", folderId);
+        component.set("v.FolderName", path[path.length - 1].title);
         helper.highlightTreeNode(component, folderId);
+        //component.find("treeView").FolderChange(folderId);
         helper.showNodeItems(component, folderId);
     },
     
-    handleNodeExpand : function(component, event, helper) {
+    /*handleNodeExpand : function(component, event, helper) {
         var path = component.get("v.Path");
         if (path.length > 0) {
             helper.highlightTreeNode(component, path[path.length - 1].id);
         }
+    },*/
+    
+    handleNewLibrary : function(component, event, helper) {
+        component.set("v.ShowNewType","Library");
+        component.set("v.ShowNewLibrary", true);
+    },
+    
+    handleNewFolder : function(component, event, helper) {
+        component.set("v.ShowNewType","Folder");
+        component.set("v.ShowNewLibrary", true);
+    },
+    
+    handleAddFiles : function(component, event, helper) {
+        component.set("v.ShowAddFiles", true);
+    },
+    
+    handleManageMember : function(component, event, helper) {
+        var contentWorkspaceID = component.get("v.FolderSettings").ContentWorkspaceId;
+        component.find("cmpManageMembers").Initialize(contentWorkspaceID);
+    },
+    
+    refreshFolder: function(component, event, helper) {
+        var path = component.get("v.Path", path),
+        	folderId = path[path.length - 1].id;
+        helper.highlightTreeNode(component, folderId);
+        helper.showNodeItems(component, folderId);
     }
     
 })

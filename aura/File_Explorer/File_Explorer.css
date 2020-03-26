@@ -8,6 +8,7 @@
     flex-grow: 1;
     display: flex;
     background-color: var(--lwc-colorBackgroundAlt2,rgb(243, 242, 242));
+	overflow:hidden;
 }
         
 .THIS.forceContentFilesHomeDesktop .leftNav {
@@ -16,7 +17,10 @@
     min-width: 200px;
 	width:25%;
     position: relative;
+	overflow:auto;
 }
+
+                
                 
 .THIS.forceContentFilesHomeDesktop .fileList {
  	background-color: var(--lwc-colorForegroundPrimary,rgb(255, 255, 255));                   
@@ -25,6 +29,7 @@
     max-width: calc(100% - 200px);
     flex: 1;
     position: relative;
+	display:flex;
 }
                             
 .THIS.forceContentFilesHomeDesktop .slds-illustration {

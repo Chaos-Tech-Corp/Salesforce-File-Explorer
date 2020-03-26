@@ -8,12 +8,16 @@
     <aura:attribute type="Object" name="Settings" />
     <aura:attribute type="Object" name="FolderSettings" />
     <aura:attribute type="String" name="WorkspaceId" />
-    
+    <aura:attribute type="String" name="FolderId" />
+    <aura:attribute type="String" name="FolderName" />
+    <aura:attribute type="Boolean" name="ShowNewLibrary" default="false" />
+    <aura:attribute type="String" name="ShowNewType" default="Library" />
+    <aura:attribute type="Boolean" name="ShowAddFiles" default="false" />
     
     <aura:handler name="init" value="{!this}" action="{!c.initialize}" />
     
     <aura:handler name="pathChangeEvent" event="c:File_Path_Change" action="{!c.handlePathChange}" phase="capture"/>
-    <aura:handler name="nodeExpandEvent" event="c:File_Node_Expanded" action="{!c.handleNodeExpand}" phase="capture"/>
+    <aura:handler event="c:File_Folder_Created" action="{!c.refreshFolder}" includeFacets="true"/>
     
     <div class="forceContentFilesHomeDesktop">
         
@@ -23,9 +27,6 @@
                     <div class="slds-media">
                         <div class="slds-media__figure">
                             <span class="slds-icon_container slds-icon-standard-opportunity" title="opportunity">
-                                <!--<svg class="slds-icon slds-page-header__icon" aria-hidden="true">
-                                <use xlink:href="/assets/icons/standard-sprite/svg/symbols.svg#opportunity"></use>
-                            </svg>-->
                                 <span class="slds-assistive-text">File Explorer</span>
                             </span>
                         </div>
@@ -72,6 +73,7 @@
                                 <aura:if isTrue="{!v.FolderSettings.CanManageMember}">
                                     <lightning:button label="Manage Members" title="Manage Members" onclick="{! c.handleManageMember }"/>
                                 </aura:if>
+                                <lightning:button iconName="utility:refresh" label="Refresh" title="Refresh" onclick="{! c.refreshFolder }"/>
                             </lightning:buttonGroup>
                         </div>
                     </div>
@@ -88,7 +90,7 @@
                 </div>
                 <aura:set attribute="else">
                     <div class="leftNav" role="navigation">
-                        <c:File_Tree_View />
+                        <c:File_Tree_View aura:id="treeView" selectedFolderId="{! v.FolderId }"/>
                     </div>
                     <div class="fileList">
                         
@@ -114,4 +116,7 @@
         </div>
     </div>
     
+    <c:File_New_Library display="{!v.ShowNewLibrary}" type="{!v.ShowNewType}" folderId="{!v.FolderId}" />
+    <c:File_Add_Files display="{!v.ShowAddFiles}" folderId="{!v.FolderId}" folderName="{!v.FolderName}" libraryId="{!v.FolderSettings.ContentWorkspaceId}" />
+    <c:File_Manage_Members aura:id="cmpManageMembers" />
 </aura:component>

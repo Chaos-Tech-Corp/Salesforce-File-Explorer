@@ -1,0 +1,36 @@
+<aura:component controller="File_Explorer">
+	
+    <lightning:notificationsLibrary aura:id="notifLib"/>
+
+    <aura:attribute type="Boolean" name="display" default="false" />
+    <aura:attribute type="String" name="folderId" default="" />
+    <aura:attribute type="String" name="folderName" default="" />
+    <aura:attribute type="String" name="libraryId" default="" />
+    
+    <aura:registerEvent name="nodeCreated" type="c:File_Folder_Created"/>
+    
+    <aura:if isTrue="{!v.display}">
+        <section role="dialog" tabindex="-1" aria-modal="true" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <lightning:buttonIcon class="slds-modal__close slds-button_icon-inverse" iconName="utility:close" variant="bare" onclick="{! c.handleCloseAddFiles }" alternativeText="Close" title="Close" />
+                    <h2 class="slds-modal__title slds-hyphenate">Upload Files to {!v.folderName}</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+
+                    <lightning:fileUpload  name="fileUploader"
+                                          label= "Files to Upload"
+                                          multiple="true"
+                                          recordId="{!v.libraryId}"
+                                          onuploadfinished="{! c.handleUploadFinished }"/>
+
+                </div>
+                <footer class="slds-modal__footer">
+                    <button class="slds-button slds-button_neutral" onclick="{!c.handleCloseAddFiles}">Close</button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </aura:if>
+    
+</aura:component>

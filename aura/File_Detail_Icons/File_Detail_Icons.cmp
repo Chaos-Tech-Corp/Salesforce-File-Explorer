@@ -6,61 +6,65 @@
     
     <aura:registerEvent name="pathChangeEvent" type="c:File_Path_Change"/>
     
-    <table class="ctc-table">
-        <thead>
-            <tr>
-                <th colspan="2">Title</th>
-                <th>Type</th>
-                <th class="ctc-date">Date modified</th>
-                <th colspan="2">Size</th>
-            </tr>
-        </thead>
-        <tbody>
-            <aura:if isTrue="{!empty(v.content)}">
+    <div style="overflow-x:hidden; overflow-y:auto; flex-grow:1;">
+        
+        <table class="ctc-table">
+            <thead>
                 <tr>
-                    <td colspan="6" class="slds-text-align_center ctc-no-border">This folder is empty</td>
+                    <th colspan="2">Title</th>
+                    <th>Type</th>
+                    <th class="ctc-date">Date modified</th>
+                    <th colspan="2">Size</th>
                 </tr>
-            </aura:if>
-            <aura:iteration items="{! v.content }" var="item">
-                <aura:if isTrue="{!item.IsFolder == true}">
+            </thead>
+            <tbody>
+                <aura:if isTrue="{!empty(v.content)}">
                     <tr>
-                        <td class="ctc-icon"><lightning:icon size="x-small" iconName="doctype:folder" /></td>
-                        <td class="slds-truncate"><a href="javascript:void(0);" data-id="{!item.Id}" data-title="{!item.Title}" onclick="{!c.handleFolderClick}">{!item.Title}</a></td>
-                        <td>Folder</td>
-                        <td></td>
-                        <td></td>
-                        <td class="ctc-icon">
-                            <lightning:buttonMenu menuAlignment="auto" alternativeText="Display" iconName="utility:down" iconSize="x-small" variant="border-filled" onselect="{!c.handleFolderMenuClick}">
-                                <lightning:menuItem label="Rename" value="{!('R:' + item.Id + ':' + item.Title)}" />
-                                <lightning:menuItem label="Delete" value="{!('D:' + item.Id)}" />
-                            </lightning:buttonMenu>
-                        </td>
+                        <td colspan="6" class="slds-text-align_center ctc-no-border">This folder is empty</td>
                     </tr>
-                    <aura:set attribute="else">
+                </aura:if>
+                <aura:iteration items="{! v.content }" var="item">
+                    <aura:if isTrue="{!item.IsFolder == true}">
                         <tr>
-                            <td class="ctc-icon"><lightning:icon size="x-small" iconName="{!('doctype:' + item.IconType)}" /></td>
-                            <td class="slds-truncate" data-id="{!item.Id}" data-name="{!item.Title}" data-folder="{!item.IsFolder}" ondblclick="{!c.handleDoubleClick}">{!item.Title}</td>
-                            <td>{!item.FileType}</td>
-                            <td class="ctc-number">
-                                <lightning:formattedDateTime value="{!item.ContentModifiedDate}" year="numeric" month="numeric" day="numeric" hour="2-digit"
-                                                             minute="2-digit" timeZone="UTC" timeZoneName="short" hour12="false"/>
-                            </td>
-                            <td class="ctc-number">{!item.ParsedSize}</td>
+                            <td class="ctc-icon"><lightning:icon size="x-small" iconName="doctype:folder" /></td>
+                            <td class="slds-truncate"><a href="javascript:void(0);" data-id="{!item.Id}" data-title="{!item.Title}" onclick="{!c.handleFolderClick}">{!item.Title}</a></td>
+                            <td>Folder</td>
+                            <td></td>
+                            <td></td>
                             <td class="ctc-icon">
-                                <lightning:buttonMenu menuAlignment="auto" alternativeText="Display" iconName="utility:down" iconSize="x-small" variant="border-filled"  onselect="{!c.handleFileMenuClick}">
-                                    <lightning:menuItem label="Download" value="{!('W:' + item.Id)}" />
-                                    <lightning:menuItem label="View File Details" value="{!('V:' + item.Id)}" />
-                                    <lightning:menuItem label="Edit File Details" value="{!('E:' + item.Id)}" />
+                                <lightning:buttonMenu menuAlignment="auto" alternativeText="Display" iconName="utility:down" iconSize="x-small" variant="border-filled" onselect="{!c.handleFolderMenuClick}">
+                                    <lightning:menuItem label="Rename" value="{!('R:' + item.Id + ':' + item.Title)}" />
                                     <lightning:menuItem label="Delete" value="{!('D:' + item.Id)}" />
                                 </lightning:buttonMenu>
                             </td>
                         </tr>
-                    </aura:set>
-                </aura:if>
-                
-                
-            </aura:iteration>
-        </tbody>
-    </table>
-    {!v.body}
+                        <aura:set attribute="else">
+                            <tr>
+                                <td class="ctc-icon"><lightning:icon size="x-small" iconName="{!('doctype:' + item.IconType)}" /></td>
+                                <td class="slds-truncate" data-id="{!item.Id}" data-name="{!item.Title}" data-folder="{!item.IsFolder}" ondblclick="{!c.handleDoubleClick}">{!item.Title}</td>
+                                <td>{!item.FileType}</td>
+                                <td class="ctc-number">
+                                    <lightning:formattedDateTime value="{!item.ContentModifiedDate}" year="numeric" month="numeric" day="numeric" hour="2-digit"
+                                                                 minute="2-digit" timeZone="UTC" timeZoneName="short" hour12="false"/>
+                                </td>
+                                <td class="ctc-number">{!item.ParsedSize}</td>
+                                <td class="ctc-icon">
+                                    <lightning:buttonMenu menuAlignment="auto" alternativeText="Display" iconName="utility:down" iconSize="x-small" variant="border-filled"  onselect="{!c.handleFileMenuClick}">
+                                        <lightning:menuItem label="Download" value="{!('W:' + item.Id)}" />
+                                        <lightning:menuItem label="View File Details" value="{!('V:' + item.Id)}" />
+                                        <lightning:menuItem label="Edit File Details" value="{!('E:' + item.Id)}" />
+                                        <lightning:menuItem label="Delete" value="{!('D:' + item.Id)}" />
+                                    </lightning:buttonMenu>
+                                </td>
+                            </tr>
+                        </aura:set>
+                    </aura:if>
+                    
+                    
+                </aura:iteration>
+            </tbody>
+        </table>
+        
+    </div>
+    
 </aura:component>

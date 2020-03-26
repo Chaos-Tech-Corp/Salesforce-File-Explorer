@@ -1,0 +1,127 @@
+<aura:component controller="File_Explorer">
+    
+    <lightning:notificationsLibrary aura:id="notifLib"/>
+    
+    <aura:attribute type="String" name="type" default="Library" />
+    <aura:attribute type="Boolean" name="display" default="false" />
+	<aura:attribute type="Boolean" name="loading" default="true" />
+    <aura:attribute type="String" name="folderId" default="" />
+    <aura:attribute type="String" name="selectedMemberId" default="" />
+    <aura:attribute type="List" name="members" default="[]" />
+    <aura:attribute type="String" name="folderName" default="" access="private" />
+    <aura:attribute type="List" name="AccessOptions" default="[{'label':'Library Administrator', 'value':'Admin'},
+                                                              {'label':'Author', 'value':'Author'},
+                                                              {'label':'Viewer', 'value':'Viewer'}]" />
+    
+    <aura:method name="Initialize" action="{!c.Initialize}" access="public">
+        <aura:attribute name="folderId" type="String" />
+    </aura:method>
+    
+    <aura:if isTrue="{!v.display}">
+        <section role="dialog" tabindex="-1" aria-modal="true" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <lightning:buttonIcon class="slds-modal__close slds-button_icon-inverse" iconName="utility:close" variant="bare" onclick="{! c.handleCloseManage }" alternativeText="Close" title="Close" />
+                    <h2 class="slds-modal__title slds-hyphenate">Manage Library Members</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+                    
+                    
+                    <div class="slds-form" role="list">
+                        <div class="slds-form__row">
+                            <div class="slds-form__item" role="listitem">
+                                <div class="slds-form-element slds-is-editing slds-size_full">
+                                    
+                                    <c:Lookup_Field 
+                                                    objectAPIName="User" 
+                                                    label="Add Members"
+                                                    returnFields="['Name']" 
+                                                    queryFields="['Name']"
+                                                    selectedId="{!v.selectedMemberId}"
+                                                    filter="IsActive = true"/>
+                                    
+                                </div>
+                            </div>
+                            <div class="slds-form__item" role="listitem">
+                                <div class="slds-form-element slds-is-editing slds-size_full">
+                                    <lightning:combobox name="Access" label="Access" value="" options="{! v.AccessOptions }" />
+                                </div>
+                            </div>
+                        </div>
+                        
+                    </div>
+                    <div class="slds-p-bottom_medium">
+                        <lightning:button variant="Brand" label="Add" title="Add" onclick="{! c.handleAddMember }"/>
+                    </div>
+                    <h3 class="slds-section__title slds-theme--shade">
+                        <span class="slds-p-horizontal--small slds-truncate" title="Current Members">Current Members</span>
+                    </h3>
+                    <div class="slds-is-relative">
+                        <aura:if isTrue="{!v.loading}">
+                            <lightning:spinner alternativeText="Loading" size="medium" />
+                        </aura:if>
+                        <div class="forceContentWorkspaceMembersGrid">
+                            <table class="slds-table slds-table_bordered slds-table_fixed-layout slds-table--header-fixed idle VIEW uiDataGrid--default uiDataGrid" data-aura-rendered-by="63:3184;a" data-aura-class="uiDataGrid--default uiDataGrid">
+                                <thead>
+                                    <tr>
+                                        <th class="titleCol " scope="col"><span class="assistiveText"></span></th>
+                                        <th class="permissionCol" scope="col"><span class="assistiveText">Actions</span></th>
+                                        <th class="deleteCol" scope="col"><span class="assistiveText">Actions</span></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <aura:iteration items="{!v.members}" var="member" indexVar="i">
+                                    <tr>
+                                        <td>
+                                            <div class="slds-grid slds-grid_vertical-align-center slds-p-top_xx-small slds-p-bottom_xx-small members-grid-cell titleCol">
+                                                <div class="slds-p-around_xx-small">
+                                                    <div class="small forceEntityIcon" style="background-color: #65CAE4">
+                                                        <span class="uiImage" data-aura-class="uiImage">
+                                                            <img src="/img/icon/t4v35/standard/user_120.png" class="icon " alt="" title=""/>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div class="slds-truncate slds-p-left_x-small slds-p-right_x-small">
+                                                    <div class="slds-grid">
+                                                        <div class="slds-float--left slds-truncate" tabindex="0">
+                                                            <span title="{!member.Member.Name}" class="uiOutputText" data-aura-class="uiOutputText">{!member.Member.Name}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="slds-grid slds-grid_vertical-align-center members-grid-cell permissionCol">
+                                                <div class="slds-col slds-size_12-of-12">
+                                                    <div class="uiMenu uiInput uiInputSelect forceInputPicklist uiInput--default uiInput--select">
+                                                        <div class="uiPopupTrigger">
+                                                            <div>
+                                                                <div>
+                                                                    <lightning:combobox dropdownAlignment="auto" variant="label-hidden" name="Access" label="Access" value="{!member.ContentWorkspacePermission.Type}" options="{! v.AccessOptions }" />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="slds-grid slds-grid_vertical-align-center slds-p-top_xx-small slds-p-bottom_xx-small members-grid-cell slds-p-left_table-cell-spacing slds-p-right--table-cell-spacing slds-show deleteCol slds-container_center">
+                                                <div class="slds-grid slds-p-top_xx-small">
+                                                    <lightning:buttonIcon class="slds-button slds-button_icon slds-container_center slds-button_icon slds-icon-waffle_container slds-button_icon-border" iconName="utility:close" variant="bare" onclick="{! c.handleRemoveMember }" alternativeText="Remove Member" title="Remove Member" />
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    </aura:iteration>
+                                </tbody>
+                            </table>
+                            <div style="height:50px"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </aura:if>
+</aura:component>

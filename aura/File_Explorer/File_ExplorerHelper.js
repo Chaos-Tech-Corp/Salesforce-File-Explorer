@@ -27,10 +27,11 @@
                 
                 var content = response.getReturnValue();
                 if (content != null && content.length > 0) {
-                    
+                    var folders = [],
+                        files = [];
                     for(var i = 0; i < content.length; i++) {
                         if (content[i].IsFolder) {
-                            
+                            folders.push(content[i]);
                         } else {
                             content[i].ParsedSize = Math.round(content[i].ContentSize / 1000) + ' KB';
                             content[i].IconType = content[i].FileExtension;
@@ -43,9 +44,10 @@
                                         else if ('.mp3.wav.m4p.ogg.wma'.indexOf(content[i].IconType) >= 0) {content[i].IconType = 'audio';}
                                             else {content[i].IconType = 'unknown';}
                             }
+                            files.push(content[i]);
                         }
                     }
-                    
+                    content = folders.concat(files);
                     
                     $A.createComponent("c:File_Detail_Icons", {content: content}, function(new_component, status, errorMessage) {
                         if (status == 'SUCCESS')  {
@@ -82,7 +84,6 @@
             var action = component.get("c.getFolderPermissions");
             action.setParams({"FolderId": path[0].id});
             action.setCallback(this, function(response) {
-                debugger;
                 var result = response.getState();
                 if (result === "SUCCESS") {
                     var settings = response.getReturnValue();

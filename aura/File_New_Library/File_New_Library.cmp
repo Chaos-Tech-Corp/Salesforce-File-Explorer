@@ -1,0 +1,34 @@
+<aura:component controller="File_Explorer">
+
+	<lightning:notificationsLibrary aura:id="notifLib"/>
+    
+    <aura:attribute type="String" name="type" default="Library" />
+    <aura:attribute type="Boolean" name="display" default="false" />
+    <aura:attribute type="String" name="folderId" default="" />
+    <aura:attribute type="String" name="folderName" default="" access="private" />
+    <aura:attribute type="String" name="folderDescription" default="" access="private" />
+    
+    <aura:registerEvent name="nodeCreated" type="c:File_Folder_Created"/>
+    
+    <aura:if isTrue="{!v.display}">
+        <section role="dialog" tabindex="-1" aria-modal="true" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <lightning:buttonIcon class="slds-modal__close slds-button_icon-inverse" iconName="utility:close" variant="bare" onclick="{! c.handleCloseLibrary }" alternativeText="Close" title="Close" />
+                    <h2 class="slds-modal__title slds-hyphenate">New {!v.type}</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+                    <lightning:input name="NewLibraryName" label="Name" required="true" value="{!v.folderName}"/>
+                    <aura:if isTrue="{!v.type == 'Library'}">
+                        <lightning:textarea name="NewLibraryDescription" label="Description"  value="{!v.folderDescription}"/>
+                    </aura:if>
+                </div>
+                <footer class="slds-modal__footer">
+                    <button class="slds-button slds-button_neutral" onclick="{!c.handleCloseLibrary}">Cancel</button>
+                    <button class="slds-button slds-button_brand" onclick="{!c.handleSaveLibrary}">Save</button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </aura:if>
+</aura:component>

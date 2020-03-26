@@ -1,0 +1,3 @@
+<aura:event type="APPLICATION" description="File Explorer Folder Created">
+    <aura:attribute name="folderId" type="String" />
+</aura:event>

@@ -1,21 +1,10 @@
 ({
-    
-    init : function(component, event, helper) {
-        var action = component.get("c.findLibraryId");
-        action.setParams({"folderId": component.get("v.recordId")});
-        action.setCallback(this, function(response) {
-            var state = response.getState();
-            if (state === "SUCCESS") {
-				component.set("v.recordId",response.getReturnValue());
-            } else {
-				console.log('Something went wrong');
-            }
-        });
-        $A.enqueueAction(action);
+    handleCloseAddFiles : function(component, event, helper) {
+        component.set("v.display", false);
     },
     
     handleUploadFinished : function(component, event, helper) {
-
+        
         var folderId = component.get("v.folderId");
         var uploadedFiles = event.getParam("files");
         var fileIds = [];
@@ -25,7 +14,7 @@
 
         //add the files to the folder 
         var action = component.get("c.addFilesToNode");
-        action.setParams({"folderId": folderId,"fileIds": fileIds});
+        action.setParams({"folderId": folderId, "fileIds": fileIds});
         action.setCallback(this, function(response) {
 
             var state = response.getState();
@@ -36,10 +25,7 @@
                     "message": "Files Uploaded!"
                 });
                 
-                var compEvent = $A.get("e.c:expand_node");
-                compEvent.setParams({"nodeId": folderId, "path": null, "append": false });
-                compEvent.fire();
-                component.destroy();
+
             } else {
 
                 var message = "There was a problem adding the files to the folder.";
@@ -57,12 +43,17 @@
                     "message": message
                 });
             }
+            
+            var appEvent = $A.get("e.c:File_Folder_Created");
+            try {
+                appEvent.setParams({"folderId": component.get("v.folderId")});
+                appEvent.fire();
+            } catch (err) {
+                debugger;
+                console.log(err);
+            }
         });
         $A.enqueueAction(action);
 
-    },
-    
-    handleCancelClick : function(component, event, helper) {
-        component.destroy();
     }
 })

@@ -1,0 +1,56 @@
+.THIS {
+}
+
+.THIS .uiScroller {
+    transform: translateZ(0);
+    position:relative;
+    width:100%;
+    height:100%;
+}
+
+.THIS .uiScroller.native {
+    overflow:auto;
+}
+
+.THIS .uiScroller.scroll-vertical>.scroller, .THIS .uiScroller.scroll-vertical .surface {
+    width:100%;
+}
+
+.THIS .forceContentWorkspaceMembersGrid .scroller {
+    transform: none;
+}
+
+.THIS .uiScroller > * {
+    box-sizing: border-box;
+}
+
+.THIS .uiScroller>.scroller {
+    position: absolute;
+    -webkit-tap-highlight-color: rgba(0,0,0,0);
+    text-size-adjust: none;
+    user-select: text;
+}
+
+.THIS .uiDataGrid--default tbody, .THIS .uiDataGrid--default tr, .THIS .uiDataGrid--default th, .THIS  .uiDataGrid--default td {
+    vertical-align: middle;
+}
+
+.THIS .forceContentWorkspaceMembersGrid .slds-table td {
+    padding: var(--lwc-spacingNone,0);
+}
+        
+.THIS .forceContentWorkspaceMembersGrid .members-grid-cell {
+    height: 49px;
+}
+        
+.THIS .forceContentWorkspaceMembersGrid th.titleCol {
+    width: 60%;
+}
+        
+.THIS .forceContentWorkspaceMembersGrid th.deleteCol {
+    width: 10%;
+}
+        
+.THIS .slds-listbox {
+    z-index: 9002;
+}
